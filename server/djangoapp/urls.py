@@ -12,6 +12,7 @@ urlpatterns = [
 
     # Reacti rakenduse login leht (seda serveeritakse index.html kaudu)
     #path('react-login/', TemplateView.as_view(template_name="index.html"), name='login_react'),  # Teenus Reacti jaoks
-
+     path('logout', views.logout_request, name='logout'),  # Logout URL
+     path('register', views.registration, name='registration'),
     # Siia tuleb ülejäänud teed (näiteks registreerimine, ülevaated jne)
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
