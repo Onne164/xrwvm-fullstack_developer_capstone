@@ -21,7 +21,7 @@ const Register = () => {
   const register = async (e) => {
     e.preventDefault(); // Veendu, et vormi saatmine ei läheks tavapäraselt läbi.
   
-    const res = await fetch(register_url, {
+    const res = await fetch(register, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

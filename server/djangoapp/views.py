@@ -6,6 +6,7 @@ import json
 from django.views.decorators.csrf import csrf_exempt
 import logging
 from django.contrib.auth.models import User
+from .models import CarMake, CarModel
 
 
 
@@ -81,3 +82,35 @@ def registration(request):
 # Create a `add_review` view to submit a review
 # def add_review(request):
 # ...
+from .models import CarMake, CarModel
+
+def initiate():
+    # Add car make and model data as shown earlier
+    car_make_data = [
+        {"name":"NISSAN", "description":"Great cars. Japanese technology"},
+        {"name":"Mercedes", "description":"Great cars. German technology"},
+        # Add other car makes...
+    ]
+    car_make_instances = []
+    for data in car_make_data:
+        car_make_instances.append(CarMake.objects.create(name=data['name'], description=data['description']))
+
+    # Create CarModel instances
+    car_model_data = [
+        {"name":"Pathfinder", "type":"SUV", "year": 2023, "car_make": car_make_instances[0]},
+        # Add other car models...
+    ]
+    for data in car_model_data:
+        CarModel.objects.create(name=data['name'], car_make=data['car_make'], type=data['type'], year=data['year'])
+
+def get_cars(request):
+    try:
+        count = CarMake.objects.count()
+        if count == 0:
+            initiate()  # Ensure this function is defined and works as expected
+        car_models = CarModel.objects.select_related('car_make')
+        cars = [{"CarModel": car_model.name, "CarMake": car_model.car_make.name} for car_model in car_models]
+        return JsonResponse({"CarModels": cars})
+    except Exception as e:
+        logger.error(f"Error fetching car data: {e}")
+        return JsonResponse({"error": "Failed to fetch car data"}, status=500)

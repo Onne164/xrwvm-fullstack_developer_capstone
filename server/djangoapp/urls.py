@@ -15,4 +15,5 @@ urlpatterns = [
      path('logout', views.logout_request, name='logout'),  # Logout URL
      path('register', views.registration, name='registration'),
     # Siia tuleb ülejäänud teed (näiteks registreerimine, ülevaated jne)
+     path('get_cars', views.get_cars, name='getcars'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
