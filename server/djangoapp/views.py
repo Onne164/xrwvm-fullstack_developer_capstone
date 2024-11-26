@@ -22,6 +22,9 @@ def login_user(request):
     if user is not None:
         login(request, user)
         data["status"] = "Authenticated"
+    else:
+        data["status"] = "Error"
+        data["message"] = "Invalid credentials"
     return JsonResponse(data)
 
 def logout_request(request):
