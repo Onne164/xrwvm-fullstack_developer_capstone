@@ -18,22 +18,35 @@ const Register = () => {
     window.location.href = window.location.origin;
   }
 
-  const register = async (e) => {
-    e.preventDefault(); // Veendu, et vormi saatmine ei läheks tavapäraselt läbi.
-  
-    const res = await fetch(register, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        "userName": userName,
-        "password": password,
-        "firstName": firstName,
-        "lastName": lastName,
-        "email": email,
-      }),
-    });
+    const registerUser = async (e) => {
+        e.preventDefault();
+        
+        const res = await fetch("/djangoapp/register/", {  // Veenduge, et URL on õige
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userName: userName,
+            password: password,
+            firstName: firstName,
+            lastName: lastName,
+            email: email,
+          }),
+        });
+      
+        const json = await res.json();
+        if (json.status === "Authenticated") {
+          sessionStorage.setItem("username", json.userName);
+          window.location.href = window.location.origin;
+        } else if (json.error === "Already Registered") {
+          alert("The user with the same username is already registered");
+          window.location.href = window.location.origin;
+        } else {
+          alert("Registration failed");
+        }
+      };
+      
   
     const json = await res.json();
     if (json.status) {
