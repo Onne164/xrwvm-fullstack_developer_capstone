@@ -4,6 +4,9 @@ from django.contrib.auth.models import User
 from django.views.decorators.csrf import csrf_exempt
 import json
 import logging
+import os
+from pathlib import Path
+from django.conf import settings
 
 from .populate import initiate
 from .models import CarMake, CarModel
@@ -66,25 +69,68 @@ def get_cars(request):
     cars = [{"CarModel": car_model.name, "CarMake": car_model.car_make.name} for car_model in car_models]
     return JsonResponse({"CarModels": cars})
 
-def get_dealers(request):
-    dealers = Dealer.objects.all()
-    serializer = DealerSerializer(dealers, many=True)
-    return JsonResponse({'status': 200, 'dealers': serializer.data})
+
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 def get_dealerships(request, state="All"):
-    endpoint = "/fetchDealers" if state == "All" else f"/fetchDealers/{state}"
-    dealerships = get_request(endpoint)
-    return JsonResponse({"status": 200, "dealers": dealerships})
+    # Failitee
+    file_path = os.path.join(settings.BASE_DIR, "database", "data", "dealerships.json")
+    
+    try:
+        # Laadime JSON-andmed failist
+        with open(file_path, "r") as file:
+            data = json.load(file)
 
+        # Kontrollime, et "dealerships" võti on olemas ja on list
+        if not isinstance(data, dict) or "dealerships" not in data or not isinstance(data["dealerships"], list):
+            return JsonResponse({"status": 500, "message": "Invalid JSON structure: 'dealerships' key missing or not a list"})
+        
+        dealerships = data["dealerships"]
+
+        # Kontrollime, et kõik kirjed on sõnastikud
+        dealerships = [dealer for dealer in dealerships if isinstance(dealer, dict)]
+
+        # Kui osariik on määratud, filtreerime dealerid osariigi järgi
+        if state != "All":
+            dealerships = [
+                dealer for dealer in dealerships if dealer.get("state", "").lower() == state.lower()
+            ]
+
+        # Kui filtreerimise tulemus on tühi
+        if not dealerships:
+            return JsonResponse({"status": 404, "message": f"No dealerships found for state: {state}"})
+
+        return JsonResponse({"status": 200, "dealers": {"dealerships": dealerships}})
+    
+    except FileNotFoundError:
+        return JsonResponse({"status": 404, "message": f"Dealerships file not found: {file_path}"})
+    except json.JSONDecodeError:
+        return JsonResponse({"status": 500, "message": "Error decoding JSON file"})
+    except Exception as e:
+        return JsonResponse({"status": 500, "message": f"An unexpected error occurred: {str(e)}"})
+
+""" def get_dealerships(request, state="All"):
+    # Ajutised testandmed
+    dealerships = [
+        {"id": 1, "name": "Dealer One", "city": "New York", "state": "NY"},
+        {"id": 2, "name": "Dealer Two", "city": "Los Angeles", "state": "CA"},
+    ]
+    return JsonResponse({"status": 200, "dealers": dealerships})
+ """
 def get_dealer_reviews(request, dealer_id):
-    if dealer_id:
-        endpoint = f"/fetchReviews/dealer/{dealer_id}"
-        reviews = get_request(endpoint)
-        for review_detail in reviews:
-            response = analyze_review_sentiments(review_detail['review'])
-            review_detail['sentiment'] = response['sentiment']
-        return JsonResponse({"status": 200, "reviews": reviews})
-    return JsonResponse({"status": 400, "message": "Bad Request"})
+    if request.method == "GET":
+        try:
+            file_path = os.path.join(BASE_DIR, "database", "data", "reviews.json")
+            with open(file_path, "r") as file:
+                reviews = json.load(file)
+            dealer_reviews = [review for review in reviews if review["dealership"] == dealer_id]
+            return JsonResponse({"status": 200, "reviews": dealer_reviews})
+        except FileNotFoundError:
+            return JsonResponse({"status": 404, "message": "Reviews file not found"})
+        except Exception as e:
+            return JsonResponse({"status": 500, "message": f"An error occurred: {e}"})
+    return JsonResponse({"status": 400, "message": "Invalid request"})
+
 
 def get_dealer_details(request, dealer_id):
     if dealer_id:
@@ -95,11 +141,30 @@ def get_dealer_details(request, dealer_id):
 
 @csrf_exempt
 def add_review(request):
-    if not request.user.is_anonymous:
-        data = json.loads(request.body)
+    if request.method == "POST":
         try:
-            # response = post_review(data)
-            return JsonResponse({"status": 200})
-        except:
-            return JsonResponse({"status": 401, "message": "Error in posting review"})
-    return JsonResponse({"status": 403, "message": "Unauthorized"})
+            data = json.loads(request.body)  # Laadime saadetud JSON-i
+            review = {
+                "name": data.get("name"),
+                "dealership": data.get("dealership"),
+                "review": data.get("review"),
+                "purchase": data.get("purchase"),
+                "purchase_date": data.get("purchase_date"),
+                "car_make": data.get("car_make", ""),  # Lisame tühja stringi, kui puudub
+                "car_model": data.get("car_model", ""),  # Lisame tühja stringi, kui puudub
+                "car_year": data.get("car_year", ""),
+            }
+            
+            # Siin lisatakse ülevaade vastavasse andmebaasi või failisüsteemi
+            # Näiteks kui kasutate JSON-andmefaili:
+            file_path = os.path.join(BASE_DIR, "database", "data", "reviews.json")
+            with open(file_path, "r+") as file:
+                reviews = json.load(file)
+                reviews.append(review)  # Lisame uue ülevaate
+                file.seek(0)
+                json.dump(reviews, file, indent=4)
+            
+            return JsonResponse({"status": 200, "message": "Review added successfully"})
+        except Exception as e:
+            return JsonResponse({"status": 500, "message": f"An error occurred: {e}"})
+    return JsonResponse({"status": 400, "message": "Invalid request"})
