@@ -11,45 +11,45 @@ const PostReview = () => {
   const [year, setYear] = useState("");
   const [date, setDate] = useState("");
   const [carmodels, setCarmodels] = useState([]);
-  const { id } = useParams();
+  const [error, setError] = useState(""); // Veateadete jaoks
+  const [loading, setLoading] = useState(false); // Laadimise oleku jaoks
 
-  const dealer_url = `/djangoapp/dealer/${id}`;
-  const review_url = `/djangoapp/add_review`;
-  const carmodels_url = `/djangoapp/get_cars`;
+  let curr_url = window.location.href;
+  let root_url = curr_url.substring(0, curr_url.indexOf("postreview"));
+  let params = useParams();
+  let id = params.id;
+  let dealer_url = root_url + `djangoapp/dealer/${id}/`;
+  let review_url = root_url + `djangoapp/add_review/`;
+  let carmodels_url = root_url + `djangoapp/get_cars/`;
 
-  // Funktsioon ülevaate postitamiseks
+  // Funktsioon arvustuse postitamiseks
   const postreview = async () => {
-    let name = `${sessionStorage.getItem("firstname") || ""} ${
-      sessionStorage.getItem("lastname") || ""
-    }`.trim();
-    if (name === "") {
+    setLoading(true); // Laadimise oleku käivitamine
+    setError(""); // Tühjendame veateate
+    let name = sessionStorage.getItem("firstname") + " " + sessionStorage.getItem("lastname");
+    if (name.includes("null")) {
       name = sessionStorage.getItem("username");
     }
 
-    // Kontrollime vajalikke välju
-    if (!review || !date || !year) {
-      alert("Review, purchase date, and car year are mandatory");
+    if (!model || !review || !date || !year) {
+      alert("All details are mandatory");
+      setLoading(false);
       return;
     }
 
-    let make_chosen = null;
-    let model_chosen = null;
+    let model_split = model.split(" ");
+    let make_chosen = model_split[0];
+    let model_chosen = model_split.slice(1).join(" "); // Juhul, kui mudel sisaldab rohkem kui ühte sõna
 
-    if (model) {
-      const model_split = model.split(" ");
-      make_chosen = model_split[0];
-      model_chosen = model_split[1];
-    }
-
-    const jsoninput = JSON.stringify({
-      name,
-      dealership: id,
-      review,
-      purchase: true,
-      purchase_date: date,
-      car_make: make_chosen || "",
-      car_model: model_chosen || "",
-      car_year: year,
+    let jsoninput = JSON.stringify({
+      "name": name,
+      "dealership": id,
+      "review": review,
+      "purchase": true,
+      "purchase_date": date,
+      "car_make": make_chosen,
+      "car_model": model_chosen,
+      "car_year": year,
     });
 
     try {
@@ -63,47 +63,52 @@ const PostReview = () => {
 
       const json = await res.json();
       if (json.status === 200) {
-        alert("Review posted successfully!");
-        window.location.href = `/dealer/${id}`; // Suuname tagasi konkreetse dealeri ülevaadete juurde
+        window.location.href = `${window.location.origin}/dealer/${id}`;
       } else {
-        alert(`Failed to post review: ${json.message}`);
+        setError("Failed to submit review: " + (json.message || "Unknown error"));
       }
-    } catch (error) {
-      console.error("Error posting review:", error);
-      alert("An error occurred while posting the review.");
+    } catch (err) {
+      setError("An unexpected error occurred while submitting review.");
+      console.error(err);
+    } finally {
+      setLoading(false); // Lõpetame laadimise
     }
   };
 
   // Funktsioon dealeri andmete toomiseks
   const get_dealer = async () => {
     try {
-      const res = await fetch(dealer_url, { method: "GET" });
+      const res = await fetch(dealer_url);
+      if (!res.ok) throw new Error("Failed to fetch dealer data");
       const retobj = await res.json();
+
       if (retobj.status === 200) {
-        const dealerobjs = Array.isArray(retobj.dealer) ? retobj.dealer : [];
-        if (dealerobjs.length > 0) {
-          setDealer(dealerobjs[0]);
-        }
+        setDealer(retobj.dealer);
       }
-    } catch (error) {
-      console.error("Error fetching dealer:", error);
+    } catch (err) {
+      setError("Failed to load dealer data.");
+      console.error(err);
     }
   };
 
-  // Funktsioon autode andmete toomiseks
+  // Funktsioon automudelite toomiseks
   const get_cars = async () => {
     try {
-      const res = await fetch(carmodels_url, { method: "GET" });
+      const res = await fetch(carmodels_url);
+      if (!res.ok) throw new Error("Failed to fetch car models");
       const retobj = await res.json();
-      if (retobj.CarModels) {
-        setCarmodels(retobj.CarModels);
+
+      if (retobj.cars) {
+        // Filtreerime autod vastavalt praeguse dealer_id alusel
+        const filteredCars = retobj.cars.filter(car => car.dealer_id === parseInt(id));
+        setCarmodels(filteredCars);
       }
-    } catch (error) {
-      console.error("Error fetching car models:", error);
+    } catch (err) {
+      setError("Failed to load car models.");
+      console.error(err);
     }
   };
 
-  // Fetchime dealeri ja autode andmed
   useEffect(() => {
     get_dealer();
     get_cars();
@@ -113,7 +118,9 @@ const PostReview = () => {
     <div>
       <Header />
       <div style={{ margin: "5%" }}>
-        <h1 style={{ color: "darkblue" }}>{dealer.full_name}</h1>
+        <h1 style={{ color: "darkblue" }}>{dealer?.full_name || "Dealer Name"}</h1>
+        {error && <p style={{ color: "red" }}>{error}</p>}
+
         <textarea
           id="review"
           cols="50"
@@ -121,41 +128,55 @@ const PostReview = () => {
           placeholder="Write your review here..."
           onChange={(e) => setReview(e.target.value)}
         ></textarea>
+
         <div className="input_field">
-          Purchase Date{" "}
-          <input type="date" onChange={(e) => setDate(e.target.value)} />
+          <label>
+            Purchase Date
+            <input type="date" onChange={(e) => setDate(e.target.value)} />
+          </label>
         </div>
+
         <div className="input_field">
-          Car Make and Model (Optional)
-          <select
-            name="cars"
-            id="cars"
-            onChange={(e) => setModel(e.target.value)}
-          >
-            <option value="" selected disabled hidden>
-              Choose Car Make and Model
-            </option>
-            {carmodels.map((carmodel) => (
-              <option key={carmodel.CarModel} value={`${carmodel.CarMake} ${carmodel.CarModel}`}>
-                {carmodel.CarMake} {carmodel.CarModel}
+          <label>
+            Car Make & Model
+            <select
+              name="cars"
+              id="cars"
+              onChange={(e) => setModel(e.target.value)}
+              defaultValue=""
+            >
+              <option value="" disabled>
+                Choose Car Make and Model
               </option>
-            ))}
-          </select>
+              {carmodels.map((car, index) => (
+                <option key={index} value={`${car.make} ${car.model}`}>
+                  {car.make} {car.model} ({car.year})
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
+
         <div className="input_field">
-          Car Year{" "}
-          <input
-            type="number"
-            onChange={(e) => setYear(e.target.value)}
-            max={2023}
-            min={2015}
-            placeholder="Enter year (e.g., 2023)"
-          />
+          <label>
+            Car Year
+            <input
+              type="number"
+              max={2023}
+              min={2015}
+              onChange={(e) => setYear(e.target.value)}
+            />
+          </label>
         </div>
+
         <div>
-          <button className="postreview" onClick={postreview}>
-            Post Review
-          </button>
+          {loading ? (
+            <p>Submitting your review...</p>
+          ) : (
+            <button className="postreview" onClick={postreview}>
+              Post Review
+            </button>
+          )}
         </div>
       </div>
     </div>
