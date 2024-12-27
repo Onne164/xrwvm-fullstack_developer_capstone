@@ -199,7 +199,7 @@ def get_dealer_details(request, dealer_id):
 def add_review(request):
     if request.method == "POST":
         try:
-            data = json.loads(request.body)  # Loeme POST-päringu keha
+            data = json.loads(request.body)
             file_path = os.path.join(settings.BASE_DIR, "database", "data", "reviews.json")
 
             # Loeme olemasolevad arvustused
@@ -213,17 +213,19 @@ def add_review(request):
                 max_id = max(review.get("id", 0) for review in reviews)
             else:
                 max_id = 0
-            new_id = max_id + 1  # Uue arvustuse ID
+            new_id = max_id + 1
 
-            # Lisame ID andmetele
+            # Lisame ID ja andmed
             data["id"] = new_id
-            reviews.append(data)  # Lisame uue arvustuse olemasolevatesse
+            reviews.append(data)
 
             # Kirjutame tagasi faili
             with open(file_path, "w") as file:
                 json.dump({"reviews": reviews}, file, indent=4)
 
-            return JsonResponse({"status": 200, "message": "Review added successfully"})
+            # Tagastame ainult selle dealeri arvustused
+            dealer_reviews = [review for review in reviews if review.get("dealership") == data["dealership"]]
+            return JsonResponse({"status": 200, "message": "Review added successfully", "reviews": dealer_reviews})
 
         except Exception as e:
             return JsonResponse({"status": 500, "message": f"An error occurred: {e}"})

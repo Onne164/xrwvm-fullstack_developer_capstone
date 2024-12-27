@@ -615,6 +615,52 @@
             "car_model": "S5",
             "car_year": "2023",
             "id": 56
+        },
+        {
+            "review": "Excellent Dealership",
+            "sentiment": "positive",
+            "name": "Onne164",
+            "dealership": 14,
+            "purchase": true,
+            "purchase_date": "2024-12-27",
+            "car_make": "Nissan",
+            "car_model": "Juke",
+            "car_year": "2005",
+            "id": 57
+        },
+        {
+            "name": "Onne164",
+            "dealership": "2",
+            "review": "Not Bad Dealership",
+            "purchase": true,
+            "purchase_date": "2024-12-27",
+            "car_make": "Kia",
+            "car_model": "Sportage",
+            "car_year": "2006",
+            "id": 58
+        },
+        {
+            "name": "Onne164",
+            "dealership": "2",
+            "review": "Excellent Dealership",
+            "purchase": true,
+            "purchase_date": "2024-12-27",
+            "car_make": "Kia",
+            "car_model": "Cadenza",
+            "car_year": "2016",
+            "id": 59
+        },
+        {
+            "review": "Excellent Dealsership",
+            "sentiment": "positive",
+            "name": "Onne164",
+            "dealership": 15,
+            "purchase": true,
+            "purchase_date": "2024-12-27",
+            "car_make": "Kia",
+            "car_model": "Rio",
+            "car_year": "2019",
+            "id": 60
         }
     ]
 }

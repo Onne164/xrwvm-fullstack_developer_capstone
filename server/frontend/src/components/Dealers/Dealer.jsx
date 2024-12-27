@@ -8,23 +8,27 @@ import negative_icon from "../assets/negative.png";
 import Header from "../Header/Header";
 
 const Dealer = () => {
-  const { id } = useParams(); // Saame ID URL-ist
-  const navigate = useNavigate(); // Lisatud navigate
+  const { id } = useParams();
+  const navigate = useNavigate();
   const reviewsUrl = `/djangoapp/reviews/dealer/${id}/`;
   const dealerUrl = `/djangoapp/dealer/${id}/`;
 
-  const [dealer, setDealer] = useState(null); // Dealeri andmed
-  const [reviews, setReviews] = useState([]); // Arvustused
-  const [loading, setLoading] = useState(true); // Laadimise olek
-  const [error, setError] = useState(""); // Veateade
+  const [dealer, setDealer] = useState(null);
+  const [reviews, setReviews] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  // Toob dealeri andmed
-  const getDealerDetails = async () => {
+  const senti_icon = (sentiment) => {
+    if (sentiment === "positive") return positive_icon;
+    if (sentiment === "negative") return negative_icon;
+    return neutral_icon;
+  };
+
+  const fetchDealerDetails = async () => {
     try {
       const response = await fetch(dealerUrl);
       if (!response.ok) throw new Error("Dealer not found");
       const data = await response.json();
-      console.log("Fetched dealer data:", data);
       setDealer(data.dealer || {});
     } catch (err) {
       console.error("Error fetching dealer:", err);
@@ -32,44 +36,26 @@ const Dealer = () => {
     }
   };
 
-  // Toob arvustused
-  const getDealerReviews = async () => {
-    console.log("Fetching reviews from URL:", reviewsUrl);
+  const fetchDealerReviews = async () => {
     try {
-      setLoading(true); // Näitab laadimise olekut
+      setLoading(true);
       const response = await fetch(reviewsUrl);
-      const contentType = response.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        throw new Error("Invalid response format");
-      }
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to fetch reviews: ${errorText}`);
-      }
+      if (!response.ok) throw new Error("Failed to fetch reviews");
       const data = await response.json();
-      console.log("Fetched reviews data:", data);
       setReviews(data.reviews || []);
     } catch (err) {
       console.error("Error fetching reviews:", err);
-      setReviews([]); // Tühjenda arvustused vea korral
+      setReviews([]);
     } finally {
-      setLoading(false); // Lõpetab laadimise oleku
+      setLoading(false);
     }
   };
 
-  // Laadi andmed pärast komponendi mountimist
   useEffect(() => {
-    console.log("Dealer URL:", dealerUrl);
-    console.log("Reviews URL:", reviewsUrl);
-    getDealerDetails();
-    getDealerReviews();
-  }, []); // Käivitub ainult üks kord mountimisel
+    fetchDealerDetails();
+    fetchDealerReviews();
+  }, [reviewsUrl, dealerUrl]); // Uuendatakse automaatselt pärast andmete lisamist
 
-  const handleWriteReview = () => {
-    navigate(`/postreview/${id}`);
-  };
-
-  // Kui ilmnes viga, kuvame selle
   if (error) return <div>{error}</div>;
 
   return (
@@ -80,31 +66,55 @@ const Dealer = () => {
         <h4 style={{ color: "grey" }}>
           {dealer?.city}, {dealer?.address}, Zip - {dealer?.zip}, {dealer?.state}
         </h4>
-        <button onClick={handleWriteReview}>Write a Review</button>
+        <button
+          style={{
+            backgroundColor: "#007BFF",
+            color: "#fff",
+            padding: "10px 15px",
+            border: "none",
+            borderRadius: "5px",
+            cursor: "pointer",
+            marginTop: "10px",
+          }}
+          onClick={() => navigate(`/postreview/${id}`)} // Navigeeri arvustuse lisamise lehele
+        >
+          Write a Review
+        </button>
       </div>
-      <div className="reviews_panel">
+
+      <div className="reviews_panel" style={{ marginTop: "20px" }}>
         {loading ? (
-          <p>Loading Reviews....</p>
-        ) : reviews.length > 0 ? (
+          <p>Loading Reviews...</p>
+        ) : reviews.length === 0 ? (
+          <div>No reviews yet!</div>
+        ) : (
           reviews.map((review, index) => (
-            <div className="review_panel" key={index}>
+            <div
+              className="review_panel"
+              key={index}
+              style={{
+                border: "1px solid #ccc",
+                borderRadius: "10px",
+                padding: "15px",
+                marginBottom: "10px",
+                display: "flex",
+                alignItems: "center",
+                gap: "15px",
+              }}
+            >
               <img
-                src={
-                  review.sentiment === "positive"
-                    ? positive_icon
-                    : review.sentiment === "negative"
-                    ? negative_icon
-                    : neutral_icon
-                }
-                className="emotion_icon"
+                src={senti_icon(review.sentiment)}
                 alt="Sentiment"
+                style={{ width: "50px", marginRight: "15px" }}
               />
-              <div className="review">{review.review}</div>
-              <div className="reviewer">{review.name}</div>
+              <div>
+                <p style={{ fontSize: "16px", fontWeight: "bold" }}>{review.review}</p>
+                <p style={{ fontSize: "14px", color: "grey" }}>
+                  {review.name} - {review.car_make} {review.car_model} {review.car_year}
+                </p>
+              </div>
             </div>
           ))
-        ) : (
-          <p>No reviews available for this dealer.</p>
         )}
       </div>
     </div>
