@@ -8,14 +8,21 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
             name='CarMake',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    )
+                ),
                 ('name', models.CharField(max_length=255)),
                 ('description', models.TextField()),
             ],
@@ -23,12 +30,39 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='CarModel',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    )
+                ),
                 ('name', models.CharField(max_length=100)),
                 ('dealer_id', models.IntegerField()),
-                ('car_type', models.CharField(choices=[('SEDAN', 'Sedan'), ('SUV', 'SUV'), ('WAGON', 'Wagon'), ('COUPE', 'Coupe'), ('HATCHBACK', 'Hatchback')], default='SUV', max_length=10)),
+                (
+                    'car_type',
+                    models.CharField(
+                        choices=[
+                            ('SEDAN', 'Sedan'),
+                            ('SUV', 'SUV'),
+                            ('WAGON', 'Wagon'),
+                            ('COUPE', 'Coupe'),
+                            ('HATCHBACK', 'Hatchback'),
+                        ],
+                        default='SUV',
+                        max_length=10,
+                    )
+                ),
                 ('year', models.DateField()),
-                ('car_make', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='djangoapp.carmake')),
+                (
+                    'car_make',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to='djangoapp.carmake',
+                    )
+                ),
             ],
         ),
     ]

@@ -2,6 +2,7 @@ import json
 from django.core.management.base import BaseCommand
 from djangoapp.models import Dealer
 
+
 class Command(BaseCommand):
     help = 'Laadib dealerite andmed JSON failist andmebaasi'
 

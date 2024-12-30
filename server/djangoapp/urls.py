@@ -20,12 +20,15 @@ urlpatterns = [
     path('logout/', logout_request, name='logout'),
     path('get_cars/', get_cars, name='get_cars'),
     path('get_dealers/', get_dealerships, name='get_dealers'),
-    path('get_dealers/<str:state>/', get_dealerships, name='get_dealers_by_state'),
+    path('get_dealers/<str:state>/', get_dealerships,
+         name='get_dealers_by_state'),
     path('dealer/<int:dealer_id>/', get_dealer_details, name='dealer_details'),
-    path('reviews/dealer/<int:dealer_id>/', get_dealer_reviews, name='dealer_reviews'),
+    path('reviews/dealer/<int:dealer_id>/',
+         get_dealer_reviews, name='dealer_reviews'),
     path('add_review/', add_review, name='add_review'),
 ]
 
 # Lisage meediafailide teenindamiseks ainult arenduskeskkonnas
 if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.MEDIA_URL,
+                          document_root=settings.MEDIA_ROOT)
