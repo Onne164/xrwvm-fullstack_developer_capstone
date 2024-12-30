@@ -1,0 +1,10 @@
+{
+  "esversion": 8,          // Luba ES6+ ja ES8
+  "node": true,            // Luba Node.js keskkonna funktsioonid
+  "undef": true,           // Kontrolli määratlemata muutujaid
+  "unused": true,          // Kontrolli kasutamata muutujaid
+  "globals": {             // Määratle globaalsed muutujad, kui neid kasutatakse
+    "require": true,
+    "module": true
+  }
+}

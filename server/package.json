@@ -9,7 +9,7 @@
   "author": "",
   "license": "ISC",
   "proxy": "http://127.0.0.1:8000",
-  "dependencies": {
+  "devDependencies": {
     "jshint": "^2.13.6"
   }
 }
